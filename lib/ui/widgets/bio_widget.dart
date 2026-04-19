@@ -19,7 +19,7 @@ class BioWidget extends StatelessWidget {
         const SizedBox(height: 12),
         TextField(
           controller: bioController,
-          maxLines: 4,
+          maxLines: 2,
           decoration: InputDecoration(
             hintText: 'Enter your bio',
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),

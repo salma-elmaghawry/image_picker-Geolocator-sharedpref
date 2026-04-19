@@ -1,11 +1,11 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 class CacheHelper {
-  static late SharedPreferences _prefs;
+  static late SharedPreferencesAsync _prefs;
 
   // Initialize SharedPreferences
   static Future<void> init() async {
-    _prefs = await SharedPreferences.getInstance();
+    _prefs = await SharedPreferencesAsync();
   }
 
   // Save user data
@@ -19,19 +19,23 @@ class CacheHelper {
     required String address,
   }) async {
     try {
-      await Future.wait([
-        _prefs.setString('name', name),
-        _prefs.setString('email', email),
-        _prefs.setString('jobTitle', jobTitle),
-        _prefs.setString('bio', bio),
-        latitude != null
-            ? _prefs.setDouble('latitude', latitude)
-            : Future.value(true),
-        longitude != null
-            ? _prefs.setDouble('longitude', longitude)
-            : Future.value(true),
-        _prefs.setString('address', address),
-      ]);
+      // Save all string values
+      await _prefs.setString('name', name);
+      await _prefs.setString('email', email);
+      await _prefs.setString('jobTitle', jobTitle);
+      await _prefs.setString('bio', bio);
+      await _prefs.setString('address', address);
+
+      // Save latitude only if it's not null
+      if (latitude != null) {
+        await _prefs.setDouble('latitude', latitude);
+      }
+
+      // Save longitude only if it's not null
+      if (longitude != null) {
+        await _prefs.setDouble('longitude', longitude);
+      }
+
       return true;
     } catch (e) {
       print('Error saving data: $e');
@@ -43,13 +47,13 @@ class CacheHelper {
   static Future<Map<String, dynamic>> loadUserData() async {
     try {
       return {
-        'name': _prefs.getString('name') ?? '',
-        'email': _prefs.getString('email') ?? '',
-        'jobTitle': _prefs.getString('jobTitle') ?? '',
-        'bio': _prefs.getString('bio') ?? '',
-        'latitude': _prefs.getDouble('latitude'),
-        'longitude': _prefs.getDouble('longitude'),
-        'address': _prefs.getString('address') ?? '',
+        'name': await _prefs.getString('name') ?? '',
+        'email': await _prefs.getString('email') ?? '',
+        'jobTitle': await _prefs.getString('jobTitle') ?? '',
+        'bio': await _prefs.getString('bio') ?? '',
+        'latitude': await _prefs.getDouble('latitude'),
+        'longitude': await _prefs.getDouble('longitude'),
+        'address': await _prefs.getString('address') ?? '',
       };
     } catch (e) {
       print('Error loading data: $e');
@@ -69,7 +73,8 @@ class CacheHelper {
   }
 
   // Check if data exists
-  static bool hasData() {
-    return _prefs.containsKey('name');
+  static Future<bool> hasData() async {
+    final name = await _prefs.getString('name');
+    return name != null && name.isNotEmpty;
   }
 }
