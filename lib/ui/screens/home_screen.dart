@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 import '../../services/location_service.dart';
+import '../../services/cache_helper.dart';
 import '../widgets/bio_widget.dart';
 import '../widgets/location_display_widget.dart';
 import '../widgets/personal_details_widget.dart';
@@ -29,6 +30,27 @@ class _HomeScreenState extends State<HomeScreen> {
   final LocationService _locationService = LocationService();
 
   @override
+  void initState() {
+    super.initState();
+    _loadSavedData();
+  }
+
+  Future<void> _loadSavedData() async {
+    final savedData = await CacheHelper.loadUserData();
+    if (savedData.isNotEmpty && savedData['name'] != '') {
+      setState(() {
+        _nameController.text = savedData['name'] ?? '';
+        _emailController.text = savedData['email'] ?? '';
+        _jobController.text = savedData['jobTitle'] ?? '';
+        _bioController.text = savedData['bio'] ?? '';
+        _latitude = savedData['latitude'];
+        _longitude = savedData['longitude'];
+        _address = savedData['address'] ?? '';
+      });
+    }
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
@@ -53,6 +75,68 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     } catch (e) {
       print('Error getting location: $e');
+    }
+  }
+
+  Future<void> _saveAllData() async {
+    final success = await CacheHelper.saveUserData(
+      name: _nameController.text,
+      email: _emailController.text,
+      jobTitle: _jobController.text,
+      bio: _bioController.text,
+      latitude: _latitude,
+      longitude: _longitude,
+      address: _address,
+    );
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            success ? 'Data saved successfully!' : 'Failed to save data',
+          ),
+          backgroundColor: success ? Colors.green : Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _loadAllData() async {
+    await _loadSavedData();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Data loaded successfully!'),
+          backgroundColor: Colors.blue,
+        ),
+      );
+    }
+  }
+
+  Future<void> _removeAllData() async {
+    final success = await CacheHelper.removeAllData();
+    if (success) {
+      setState(() {
+        _nameController.clear();
+        _emailController.clear();
+        _jobController.clear();
+        _bioController.clear();
+        _selectedImage = null;
+        _latitude = null;
+        _longitude = null;
+        _address = '';
+      });
+    }
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            success ? 'Data removed successfully!' : 'Failed to remove data',
+          ),
+          backgroundColor: success ? Colors.green : Colors.red,
+        ),
+      );
     }
   }
 
@@ -88,6 +172,54 @@ class _HomeScreenState extends State<HomeScreen> {
                 latitude: _latitude,
                 longitude: _longitude,
                 onGetLocation: _getUserLocation,
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton(
+                    onPressed: _saveAllData,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
+                    ),
+                    child: const Text(
+                      'Save',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: _loadAllData,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
+                    ),
+                    child: const Text(
+                      'Load',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: _removeAllData,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
+                    ),
+                    child: const Text(
+                      'Remove',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 24),
             ],

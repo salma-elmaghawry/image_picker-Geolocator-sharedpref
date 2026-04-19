@@ -3,6 +3,7 @@ import 'package:geolocator/geolocator.dart';
 
 class LocationService {
 
+// Method to get the current position of the device
   Future<Position?> getCurrentPosition() async {
     try {
       bool serviceEnabled;
@@ -12,7 +13,6 @@ class LocationService {
       if (!serviceEnabled) {
         throw Exception('Location services are disabled.');
       }
-
       permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
@@ -31,7 +31,7 @@ class LocationService {
       rethrow;
     }
   }
-
+// Method to get the address from latitude and longitude
   Future<String> getAddressFromCoordinates(
     double latitude,
     double longitude,
