@@ -2,14 +2,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class CacheHelper {
   static late SharedPreferencesAsync _prefs;
-
-  // Initialize SharedPreferences
   static Future<void> init() async {
     _prefs = await SharedPreferencesAsync();
   }
 
-  // Save user data
-  static Future<bool> saveUserData({
+  static Future<bool> SaveUserData({
     required String name,
     required String email,
     required String jobTitle,
@@ -17,33 +14,30 @@ class CacheHelper {
     required double? latitude,
     required double? longitude,
     required String address,
+    String? imagePath,
   }) async {
     try {
-      // Save all string values
       await _prefs.setString('name', name);
       await _prefs.setString('email', email);
       await _prefs.setString('jobTitle', jobTitle);
       await _prefs.setString('bio', bio);
-      await _prefs.setString('address', address);
-
-      // Save latitude only if it's not null
       if (latitude != null) {
         await _prefs.setDouble('latitude', latitude);
       }
-
-      // Save longitude only if it's not null
       if (longitude != null) {
         await _prefs.setDouble('longitude', longitude);
       }
-
+      await _prefs.setString('address', address);
+      if (imagePath != null && imagePath.isNotEmpty) {
+        await _prefs.setString('imagePath', imagePath);
+      }
       return true;
     } catch (e) {
-      print('Error saving data: $e');
+      print('Error saving user data: $e');
       return false;
     }
   }
 
-  // Load user data
   static Future<Map<String, dynamic>> loadUserData() async {
     try {
       return {
@@ -54,25 +48,24 @@ class CacheHelper {
         'latitude': await _prefs.getDouble('latitude'),
         'longitude': await _prefs.getDouble('longitude'),
         'address': await _prefs.getString('address') ?? '',
+        'imagePath': await _prefs.getString('imagePath'),
       };
     } catch (e) {
-      print('Error loading data: $e');
+      print('Error loading user data: $e');
       return {};
     }
   }
 
-  // Remove all saved data
-  static Future<bool> removeAllData() async {
+  static Future<bool> clearUserData() async {
     try {
       await _prefs.clear();
       return true;
     } catch (e) {
-      print('Error removing data: $e');
+      print('Error clearing user data: $e');
       return false;
     }
   }
 
-  // Check if data exists
   static Future<bool> hasData() async {
     final name = await _prefs.getString('name');
     return name != null && name.isNotEmpty;

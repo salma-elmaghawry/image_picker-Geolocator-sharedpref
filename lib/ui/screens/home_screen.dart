@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 import '../../services/location_service.dart';
-import '../../services/cache_helper.dart';
+import '../../database/cache_helper.dart';
 import '../widgets/bio_widget.dart';
 import '../widgets/location_display_widget.dart';
 import '../widgets/personal_details_widget.dart';
@@ -32,22 +32,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _loadSavedData();
-  }
-
-  Future<void> _loadSavedData() async {
-    final savedData = await CacheHelper.loadUserData();
-    if (savedData.isNotEmpty && savedData['name'] != '') {
-      setState(() {
-        _nameController.text = savedData['name'] ?? '';
-        _emailController.text = savedData['email'] ?? '';
-        _jobController.text = savedData['jobTitle'] ?? '';
-        _bioController.text = savedData['bio'] ?? '';
-        _latitude = savedData['latitude'];
-        _longitude = savedData['longitude'];
-        _address = savedData['address'] ?? '';
-      });
-    }
+    loadSavedData();
   }
 
   @override
@@ -57,6 +42,26 @@ class _HomeScreenState extends State<HomeScreen> {
     _jobController.dispose();
     _bioController.dispose();
     super.dispose();
+  }
+
+  Future<void> loadSavedData() async {
+    final data = await CacheHelper.loadUserData();
+    if (data.isNotEmpty && data['name'] != '') {
+      setState(() {
+        _nameController.text = data['name'] ?? '';
+        _emailController.text = data['email'] ?? '';
+        _jobController.text = data['jobTitle'] ?? '';
+        _bioController.text = data['bio'] ?? '';
+        _latitude = data['latitude'];
+        _longitude = data['longitude'];
+        _address = data['address'] ?? '';
+        if (data['imagePath'] != null && data['imagePath'].isNotEmpty) {
+          _selectedImage = File(data['imagePath']);
+        }
+      });
+    } else {
+      print('No saved data found');
+    }
   }
 
   Future<void> _getUserLocation() async {
@@ -78,8 +83,8 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _saveAllData() async {
-    final success = await CacheHelper.saveUserData(
+  Future<void> saveUserData() async {
+    final Sucessful = await CacheHelper.SaveUserData(
       name: _nameController.text,
       email: _emailController.text,
       jobTitle: _jobController.text,
@@ -87,56 +92,37 @@ class _HomeScreenState extends State<HomeScreen> {
       latitude: _latitude,
       longitude: _longitude,
       address: _address,
+      imagePath: _selectedImage?.path,
     );
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            success ? 'Data saved successfully!' : 'Failed to save data',
-          ),
-          backgroundColor: success ? Colors.green : Colors.red,
-        ),
-      );
-    }
+    print('User data saved successfully: $Sucessful');
   }
 
-  Future<void> _loadAllData() async {
-    await _loadSavedData();
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Data loaded successfully!'),
-          backgroundColor: Colors.blue,
-        ),
-      );
-    }
+  Future<void> loadData() async {
+    final data = await CacheHelper.loadUserData();
+    setState(() {
+      _nameController.text = data['name'] ?? '';
+      _emailController.text = data['email'] ?? '';
+      _jobController.text = data['jobTitle'] ?? '';
+      _bioController.text = data['bio'] ?? '';
+      _latitude = data['latitude'];
+      _longitude = data['longitude'];
+      _address = data['address'] ?? '';
+    });
   }
 
-  Future<void> _removeAllData() async {
-    final success = await CacheHelper.removeAllData();
-    if (success) {
+  Future<void> removeData() async {
+    final successful = await CacheHelper.clearUserData();
+    if (successful) {
       setState(() {
         _nameController.clear();
         _emailController.clear();
         _jobController.clear();
         _bioController.clear();
-        _selectedImage = null;
         _latitude = null;
         _longitude = null;
         _address = '';
+        _selectedImage = null;
       });
-    }
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            success ? 'Data removed successfully!' : 'Failed to remove data',
-          ),
-          backgroundColor: success ? Colors.green : Colors.red,
-        ),
-      );
     }
   }
 
@@ -174,11 +160,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 onGetLocation: _getUserLocation,
               ),
               const SizedBox(height: 24),
+
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   ElevatedButton(
-                    onPressed: _saveAllData,
+                    onPressed: saveUserData,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
                       padding: const EdgeInsets.symmetric(
@@ -192,7 +179,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   ElevatedButton(
-                    onPressed: _loadAllData,
+                    onPressed: loadData,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
                       padding: const EdgeInsets.symmetric(
@@ -206,7 +193,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   ElevatedButton(
-                    onPressed: _removeAllData,
+                    onPressed: removeData,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red,
                       padding: const EdgeInsets.symmetric(
