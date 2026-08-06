@@ -1,9 +1,9 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/database/cache_helper.dart';
 
 import '../../services/location_service.dart';
-import '../../database/cache_helper.dart';
 import '../widgets/bio_widget.dart';
 import '../widgets/location_display_widget.dart';
 import '../widgets/personal_details_widget.dart';
@@ -107,6 +107,11 @@ class _HomeScreenState extends State<HomeScreen> {
       _latitude = data['latitude'];
       _longitude = data['longitude'];
       _address = data['address'] ?? '';
+      if (data['imagePath'] != null && data['imagePath'].isNotEmpty) {
+        _selectedImage = File(data['imagePath']);
+      } else {
+        _selectedImage = null;
+      }
     });
   }
 
