@@ -4,6 +4,7 @@ class LocationDisplayWidget extends StatelessWidget {
   final String address;
   final double? latitude;
   final double? longitude;
+  final bool isLoading;
   final VoidCallback onGetLocation;
 
   const LocationDisplayWidget({
@@ -11,6 +12,7 @@ class LocationDisplayWidget extends StatelessWidget {
     required this.latitude,
     required this.longitude,
     required this.onGetLocation,
+    this.isLoading = false,
   });
 
   @override
@@ -20,11 +22,20 @@ class LocationDisplayWidget extends StatelessWidget {
         SizedBox(
           width: double.infinity,
           child: ElevatedButton.icon(
-            onPressed: onGetLocation,
-            icon: const Icon(Icons.location_on, color: Colors.white),
-            label: const Text(
-              'Get Your Location',
-              style: TextStyle(color: Colors.white),
+            onPressed: isLoading ? null : onGetLocation,
+            icon: isLoading
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Icon(Icons.location_on, color: Colors.white),
+            label: Text(
+              isLoading ? 'Getting Location...' : 'Get Your Location',
+              style: const TextStyle(color: Colors.white),
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.green,
