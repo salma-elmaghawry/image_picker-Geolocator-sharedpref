@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/database/cache_helper.dart';
 
 import '../../services/location_service.dart';
 import '../widgets/bio_widget.dart';
@@ -29,15 +30,71 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final LocationService _locationService = LocationService();
 
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _emailController.dispose();
-    _jobController.dispose();
-    _bioController.dispose();
-    super.dispose();
+  ///=========================cache helper========================
+
+  Future<void> _loadUserData() async {
+    final userData = await CacheHelper.loadUserData();
+    setState(() {
+      _nameController.text = userData['name'] ?? '';
+      _emailController.text = userData['email'] ?? '';
+      _jobController.text = userData['jobTitle'] ?? '';
+      _bioController.text = userData['bio'] ?? '';
+      _latitude = userData['latitude'];
+      _longitude = userData['longitude'];
+      _address = userData['address'] ?? '';
+      final profileImagePath = userData['profileImagePath'];
+      if (profileImagePath != null && profileImagePath.isNotEmpty) {
+        _selectedImage = File(profileImagePath);
+      }
+    });
   }
 
+  Future<void> _saveUserData() async {
+    final success = await CacheHelper.saveUserData(
+      name: _nameController.text,
+      email: _emailController.text,
+      jobTitle: _jobController.text,
+      bio: _bioController.text,
+      latitude: _latitude,
+      longitude: _longitude,
+      address: _address,
+      profileImagePath: _selectedImage?.path,
+    );
+
+    if (success) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Data saved successfully!')));
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Failed to save data.')));
+    }
+  }
+
+  Future<void> _clearUserData() async {
+    final success = await CacheHelper.removeAllData();
+    if (success) {
+      setState(() {
+        _nameController.clear();
+        _emailController.clear();
+        _jobController.clear();
+        _bioController.clear();
+        _latitude = null;
+        _longitude = null;
+        _address = '';
+        _selectedImage = null;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Data cleared successfully!')),
+      );
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Failed to clear data.')));
+    }
+  }
+//=========================get location========================
   Future<void> _getUserLocation() async {
     setState(() => _isLoadingLocation = true);
     try {
@@ -58,6 +115,21 @@ class _HomeScreenState extends State<HomeScreen> {
     } finally {
       setState(() => _isLoadingLocation = false);
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _jobController.dispose();
+    _bioController.dispose();
+    super.dispose();
   }
 
   @override
@@ -84,7 +156,6 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 24),
               BioWidget(bioController: _bioController),
               const SizedBox(height: 24),
-
               Divider(),
               const SizedBox(height: 24),
               LocationDisplayWidget(
@@ -95,6 +166,23 @@ class _HomeScreenState extends State<HomeScreen> {
                 onGetLocation: _getUserLocation,
               ),
               const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton(
+                    onPressed: _saveUserData,
+                    child: const Text('Save'),
+                  ),
+                  ElevatedButton(
+                    onPressed: _loadUserData,
+                    child: const Text('Load'),
+                  ),
+                  ElevatedButton(
+                    onPressed: _clearUserData,
+                    child: const Text('Clear'),
+                  ),
+                ],
+              ),
             ],
           ),
         ),

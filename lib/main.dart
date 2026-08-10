@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/database/cache_helper.dart';
 import 'package:flutter_application_1/ui/screens/home_screen.dart';
 
-void main() {
+void main() async {
   runApp(const MyApp());
 }
 
